@@ -1,5 +1,5 @@
 // mqttClient.js
-const mqtt = require('mqtt');
+// const mqtt = require('mqtt');
 
 // Define connection options with username, password, and secure settings
 const options = {
