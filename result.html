@@ -12,21 +12,13 @@
   <div class="row">
     <div class="col-md-12">
       <div class="card" style="padding: 35px;">
-        <h3 class="text-center">Network Data</h3>
+        <h3 class="text-center">Result Data</h3>
         <table class="table table-bordered" id="message-table-body">
           <thead>
             <tr>
               <th>No</th>
-              <th>Timestamp</th>
-              <th>Accel-X</th>
-              <th>Accel-Y</th>
-              <th>Accel-Z</th>
-              <th>Latt</th>
-              <th>Long</th>
-              <th>Rot-X</th>
-              <th>Rot-Y</th>
-              <th>Rot-Z</th>
-              <th>Temp</th>
+              <th>Datetime</th>
+              <th>Result</th>
             </tr>
           </thead>
           <tbody id="table-body">
@@ -49,25 +41,16 @@
     function getData(){
         const tableBody = document.getElementById('table-body');
         tableBody.innerHTML = "";
-        fetch('monitoring-data.json')
+        fetch('api-result-data.json')
         .then(response => response.json())
         .then(messages => {
             var i = 1;
             messages.forEach(msg => {
-            const { timestamp, message } = msg;
-            const data = JSON.parse(message);
+            const { datetime, predict } = msg;
             let newRow = document.createElement('tr');
             newRow.innerHTML = `<td>${i}</td>
-                                <td>${timestamp}</td>
-                                <td>${data['Accel-X']}</td>
-                                <td>${data['Accel-Y']}</td>
-                                <td>${data['Accel-Z']}</td>
-                                <td>${data['Latt']}</td>
-                                <td>${data['Long']}</td>
-                                <td>${data['Rot-X']}</td>
-                                <td>${data['Rot-Y']}</td>
-                                <td>${data['Rot-Z']}</td>
-                                <td>${data['Temp']}</td>`;
+                                <td>${datetime}</td>
+                                <td>${predict}</td>`;
                                 i++;
             tableBody.appendChild(newRow);
             });

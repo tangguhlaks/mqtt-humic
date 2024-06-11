@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MQTT Client</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/mqtt@2.18.8/dist/mqtt.min.js"></script>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css"
+    />
+  </head>
+  <body style="background-color: aliceblue; padding: 20px">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-block" style="padding: 15px">
+            <div id="chart"></div>
+          </div>
+        </div>
+        <br />
+      </div>
+    </div>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
+      integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script
+      type="text/javascript"
+      src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script
+      src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs"
+      type="module"
+    ></script>
+
+    <script>
+      const eventSource = new EventSource("/events");
+      const tableBody = document.getElementById("table-body");
+      const interval = 10000; // 10 seconds
+      let chartData = [];
+      let chartInitialized = false;
+
+      getData();
+      eventSource.onmessage = function (event) {
+        getData();
+      };
+
+      function getData() {
+        fetch("monitoring-data.json")
+          .then((response) => response.json())
+          .then((messages) => {
+            var i = 1;
+            var newChartData = [];
+
+            messages.forEach((msg) => {
+              const { timestamp, message } = msg;
+              const data = JSON.parse(message);
+
+              // Push data to chartData array
+              newChartData.push({
+                x: new Date(timestamp).getTime(),
+                y: data["Accel-X"],
+              });
+
+              i++;
+            });
+
+            // Ensure data is sorted by timestamp
+            newChartData.sort((a, b) => a.x - b.x);
+
+            // Generate new chart data points every 10 seconds
+            let alignedChartData = alignDataPoints(newChartData);
+
+            chartData = alignedChartData;
+            if (!chartInitialized) {
+              initializeChart();
+              chartInitialized = true;
+            } else {
+              updateChart();
+            }
+          })
+          .catch((error) => console.error("Error fetching JSON:", error));
+      }
+
+      function alignDataPoints(data) {
+        let startTime = data[0].x;
+        let endTime = data[data.length - 1].x;
+        let alignedData = [];
+        for (let time = startTime; time <= endTime; time += interval) {
+          let closestPoint = data.reduce((prev, curr) =>
+            Math.abs(curr.x - time) < Math.abs(prev.x - time) ? curr : prev
+          );
+          alignedData.push({ x: time, y: closestPoint.y });
+        }
+        return alignedData;
+      }
+
+      function initializeChart() {
+        var options = {
+          series: [
+            {
+              data: chartData,
+            },
+          ],
+          chart: {
+            id: "realtime",
+            height: 350,
+            type: "line",
+            animations: {
+              enabled: true,
+              easing: "linear",
+              dynamicAnimation: {
+                speed: 1000,
+              },
+            },
+            toolbar: {
+              show: false,
+            },
+            zoom: {
+              enabled: false,
+            },
+          },
+          dataLabels: {
+            enabled: false,
+          },
+          stroke: {
+            curve: "smooth",
+          },
+          title: {
+            text: "Dynamic Updating Chart",
+            align: "left",
+          },
+          markers: {
+            size: 0,
+          },
+          xaxis: {
+            type: "datetime",
+            labels: {
+              datetimeUTC: false, // Ensure local time is displayed
+              format: "HH:mm:ss", // Display in HH:mm:ss format
+            },
+            range: 60000, // Show the last 60 seconds of data
+          },
+          yaxis: {
+            min: undefined,
+            max: undefined,
+          },
+          legend: {
+            show: false,
+          },
+        };
+
+        var chart = new ApexCharts(document.querySelector("#chart"), options);
+        chart.render();
+      }
+
+      function updateChart() {
+        var minY = Math.min(...chartData.map((d) => d.y));
+        var maxY = Math.max(...chartData.map((d) => d.y));
+        var range = maxY - minY;
+        var buffer = range * 0.1; // Add 10% buffer to the range
+
+        ApexCharts.exec(
+          "realtime",
+          "updateOptions",
+          {
+            yaxis: {
+              min: minY - buffer,
+              max: maxY + buffer,
+            },
+            xaxis: {
+              min: chartData[chartData.length - 1].x - 60000, // Display the last 60 seconds
+              max: chartData[chartData.length - 1].x,
+            },
+          },
+          false,
+          true
+        );
+
+        ApexCharts.exec("realtime", "updateSeries", [
+          {
+            data: chartData,
+          },
+        ]);
+      }
+
+      // Update chart every second
+      setInterval(getData, 10000); // Update every 10 seconds to align with the data interval
+    </script>
+  </body>
+</html>
