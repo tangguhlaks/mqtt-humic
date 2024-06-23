@@ -45,6 +45,6 @@ client.on('connect', () => {
       console.log(`Error publishing message: ${err}`);
     }
   });
-  }, 10000);
+  }, 5000);
   
 });

@@ -37,26 +37,22 @@
     eventSource.onmessage = function(event) {
         getData();
     };
-    
+    var count = 0;
     function getData(){
         const tableBody = document.getElementById('table-body');
-        tableBody.innerHTML = "";
         fetch('api-result-data.json')
         .then(response => response.json())
         .then(messages => {
-            var i = 1;
-            messages.forEach(msg => {
-            const { datetime, predict } = msg;
-            let newRow = document.createElement('tr');
-            newRow.innerHTML = `<td>${i}</td>
-                                <td>${datetime}</td>
-                                <td>${predict}</td>`;
-                                i++;
-            tableBody.appendChild(newRow);
-            });
-            // resetMonitoringData();
-            $(document).ready(function() {
-            });
+            for (let index = count; index < messages.length; index++) {
+              const msg = messages[index];
+              const { datetime, predict } = msg;
+              let newRow = document.createElement('tr');
+              newRow.innerHTML = `<td>${index+1}</td>
+                                  <td>${datetime}</td>
+                                  <td>${predict}</td>`;
+              tableBody.appendChild(newRow);
+            }
+            count += messages.length - count
         })
         .catch(error => console.error('Error fetching JSON:', error));
     }
