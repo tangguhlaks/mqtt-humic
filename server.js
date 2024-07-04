@@ -11,10 +11,10 @@ const PORT = process.env.PORT || 3000;
 
 // Define connection options with username, password, and secure settings
 const options = {
-  username: 'tangguhlaksana',   // Replace with your username
-  password: 'Laks123!!',   // Replace with your password
-  protocol: 'mqtts',           // Use secure MQTT
-  port: 8883,                  // Secure MQTT port
+  username: '',   // Replace with your username
+  password: '',   // Replace with your password
+  protocol: '',           // Use secure MQTT
+  port: ,                  // Secure MQTT port
   rejectUnauthorized: false    // Accept self-signed certificates (if necessary)
 };
 
